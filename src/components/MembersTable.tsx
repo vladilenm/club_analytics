@@ -143,7 +143,7 @@ export function MembersTable({ members }: MembersTableProps) {
           <h3 id="members-heading">Участники</h3>
           <span className="cnt" aria-live="polite">{recordCountLabel(visibleMembers.length)}</span>
         </div>
-        <div className="scroll">
+        <div className="scroll" role="region" aria-label="Таблица участников" tabIndex={0}>
           <table aria-label="Участники">
             <thead>
               <tr>
@@ -159,7 +159,7 @@ export function MembersTable({ members }: MembersTableProps) {
             </thead>
             <tbody>
               {visibleMembers.map((member) => (
-                <tr key={member.id}>
+                <tr className="member-row" key={member.id}>
                   <td className="nm">{member.name}</td>
                   <td className="tg">{member.telegram || <span className="dim">—</span>}</td>
                   <td className="ph">{member.phone || <span className="dim">—</span>}</td>

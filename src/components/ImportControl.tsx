@@ -84,8 +84,9 @@ export function ImportControl({ metadata, importing, error, onFile }: ImportCont
   }
 
   return (
-    <section aria-label="Импорт CSV">
+    <section className="import-control" aria-label="Импорт CSV">
       <label
+        className="upload-button"
         htmlFor="csv-file"
         role="button"
         tabIndex={importing ? -1 : 0}
@@ -106,7 +107,7 @@ export function ImportControl({ metadata, importing, error, onFile }: ImportCont
       />
 
       {metadata ? (
-        <p>
+        <p className="import-meta">
           <span>{metadata.fileName}</span>{' '}
           <span>
             Экспорт от <time dateTime={metadata.exportDate}>{formatExportDate(metadata.exportDate)}</time>
@@ -114,11 +115,11 @@ export function ImportControl({ metadata, importing, error, onFile }: ImportCont
         </p>
       ) : null}
 
-      <p role="status" aria-live="polite">
+      <p className="import-status" role="status" aria-live="polite">
         {importing ? 'Обрабатываем…' : ''}
       </p>
-      {error ? <p role="alert">{error}</p> : null}
-      {dragActive ? <div>Отпустите CSV-файл</div> : null}
+      {error ? <p className="import-error" role="alert">{error}</p> : null}
+      {dragActive ? <div className="drop-overlay">Отпустите CSV-файл</div> : null}
     </section>
   );
 }

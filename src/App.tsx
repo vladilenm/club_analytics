@@ -139,8 +139,8 @@ export function App({ repository: repositoryProp }: AppProps) {
   }, [repository]);
 
   return (
-    <main>
-      <header>
+    <main className="wrap">
+      <header className="app-header">
         <h1>Клуб Незаменимых</h1>
         {phase === 'loading' ? null : (
           <ImportControl
@@ -152,11 +152,13 @@ export function App({ repository: repositoryProp }: AppProps) {
         )}
       </header>
 
-      {phase === 'loading' ? <p role="status">Загрузка локальных данных…</p> : null}
+      {phase === 'loading' ? <p className="loading-state" role="status">Загрузка локальных данных…</p> : null}
       {phase === 'ready-empty' ? (
-        <section>
-          <h2>Загрузите CSV</h2>
-          <p>Выберите экспорт участников, чтобы открыть дашборд.</p>
+        <section className="empty-state">
+          <div>
+            <h2>Загрузите CSV</h2>
+            <p>Выберите экспорт участников, чтобы открыть дашборд.</p>
+          </div>
         </section>
       ) : null}
       {dashboard ? (

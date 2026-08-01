@@ -100,6 +100,18 @@ describe('Dashboard', () => {
     expect(screen.getByText('Март 2026: 0 новых, 1 отмена')).toBeInTheDocument();
   });
 
+  it('keeps the member table in a named scroll region with textual statuses', () => {
+    render(<Dashboard members={members} model={buildDashboardModel(members)} />);
+
+    const scrollRegion = screen.getByRole('region', { name: 'Таблица участников' });
+    const rows = within(scrollRegion).getAllByRole('row').slice(1);
+
+    expect(rows).toHaveLength(4);
+    for (const row of rows) expect(row).toHaveClass('member-row');
+    expect(within(scrollRegion).getAllByText('Активен')).toHaveLength(2);
+    expect(within(scrollRegion).getAllByText('Отменил')).toHaveLength(2);
+  });
+
   it('renders a safe empty state when there are no active plans', () => {
     const { container } = render(<PlanDistribution plans={[]} />);
 

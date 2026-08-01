@@ -43,7 +43,7 @@ describe('ImportControl', () => {
     const onClick = vi.fn();
     input.addEventListener('click', onClick);
 
-    await user.click(screen.getByText('Загрузить CSV'));
+    await user.click(screen.getByRole('button', { name: 'Загрузить CSV' }));
 
     expect(input).toHaveAttribute('type', 'file');
     expect(input).toHaveAttribute('accept', '.csv,text/csv');

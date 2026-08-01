@@ -13,8 +13,8 @@ export interface DashboardProps {
 
 export function Dashboard({ members, model }: DashboardProps) {
   return (
-    <section aria-labelledby="dashboard-heading">
-      <h2 id="dashboard-heading">Дашборд участников</h2>
+    <section className="dashboard" aria-labelledby="dashboard-heading">
+      <h2 className="dashboard-heading" id="dashboard-heading">Дашборд участников</h2>
       <KpiGrid stats={model.stats} />
       <Insight model={model} />
       <div className="grid">
