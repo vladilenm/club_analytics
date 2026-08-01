@@ -69,6 +69,10 @@ describe('buildDashboardModel', () => {
         { plan: monthPlan, count: 1 },
         { plan: longerPlan, count: 1 },
       ],
+      churnedPlans: [
+        { plan: monthPlan, count: 1 },
+        { plan: longerPlan, count: 1 },
+      ],
     });
     expect(buildDashboardModel(members).months).toEqual([
       { month: '2026-01', joins: 2, churn: 0 },
@@ -77,8 +81,22 @@ describe('buildDashboardModel', () => {
     ]);
   });
 
-  it('reports the actual longer-plan churn count in the insight', () => {
-    expect(buildInsight(buildDashboardModel(members))).toContain('1');
+  it('reports only non-short-plan churns in the exact insight sentence', () => {
+    const startChurns = Array.from({ length: 13 }, (_, index) => member({
+      id: `start-${index}`,
+      status: 'churned',
+      plan: 'Старт',
+    }));
+    const model = buildDashboardModel([
+      ...startChurns,
+      member({ id: 'six-month', status: 'churned', plan: longerPlan }),
+      member({ id: 'annual', status: 'churned', plan: 'Годовой тариф' }),
+      member({ id: 'active', status: 'active', plan: monthPlan }),
+    ]);
+
+    expect(buildInsight(model)).toBe(
+      'Удержание составляет 6.3%. Отток после одной оплаты: 15. Отток на длительных тарифах: 2.',
+    );
   });
 
   it('returns zero churn cohort metrics when every member is active', () => {
@@ -89,6 +107,25 @@ describe('buildDashboardModel', () => {
       averageChurnedLifetime: 0,
       averageChurnedPayments: 0,
       onePaymentChurned: 0,
+    });
+  });
+
+  it('rounds fractional retention and payment averages while truncating lifetime averages', () => {
+    const model = buildDashboardModel([
+      member({ id: 'active-1', lifetimeDays: 100, paymentCount: 1 }),
+      member({ id: 'active-2', lifetimeDays: 100, paymentCount: 1 }),
+      member({ id: 'active-3', lifetimeDays: 100, paymentCount: 1 }),
+      member({ id: 'active-4', lifetimeDays: 101, paymentCount: 2 }),
+      member({ id: 'churned-1', status: 'churned', lifetimeDays: 91, paymentCount: 1 }),
+      member({ id: 'churned-2', status: 'churned', lifetimeDays: 92, paymentCount: 2 }),
+    ]);
+
+    expect(model.stats).toMatchObject({
+      retention: 66.7,
+      averageActiveLifetime: 100,
+      averageChurnedLifetime: 91,
+      averageActivePayments: 1.3,
+      averageChurnedPayments: 1.5,
     });
   });
 });

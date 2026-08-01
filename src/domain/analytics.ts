@@ -118,7 +118,10 @@ export function buildDashboardModel(members: readonly MemberRecord[]): Dashboard
 
 export function buildInsight(model: DashboardModel): string {
   const longerPlanChurned = model.churnedPlans
-    .filter(({ plan }) => !plan.startsWith('1 месяц'))
+    .filter(({ plan }) => {
+      const normalizedPlan = plan.trim().toLocaleLowerCase('ru');
+      return !normalizedPlan.startsWith('1 месяц') && normalizedPlan !== 'старт';
+    })
     .reduce((total, { count }) => total + count, 0);
 
   return `Удержание составляет ${model.stats.retention}%. Отток после одной оплаты: ${model.stats.onePaymentChurned}. Отток на длительных тарифах: ${longerPlanChurned}.`;
