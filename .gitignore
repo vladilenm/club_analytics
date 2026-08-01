@@ -1,5 +1,7 @@
 .worktrees/
 .superpowers/
+node_modules/
+dist/
 __pycache__/
 *.pyc
 club_dashboard_updated.html
