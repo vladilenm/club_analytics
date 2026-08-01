@@ -14,7 +14,7 @@ const metadata: ImportMetadata = {
 
 function renderControl(overrides: Partial<React.ComponentProps<typeof ImportControl>> = {}) {
   const onFile = vi.fn();
-  render(
+  const view = render(
     <ImportControl
       metadata={null}
       importing={false}
@@ -23,7 +23,7 @@ function renderControl(overrides: Partial<React.ComponentProps<typeof ImportCont
       {...overrides}
     />,
   );
-  return { onFile };
+  return { onFile, ...view };
 }
 
 function fileDrag(file?: File) {
@@ -51,7 +51,10 @@ describe('ImportControl', () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
-  it('activates the hidden input from the keyboard', async () => {
+  it.each([
+    ['Enter', '{Enter}'],
+    ['Space', ' '],
+  ])('activates the hidden input with %s', async (_keyName, key) => {
     const user = userEvent.setup();
     renderControl();
     const input = screen.getByLabelText('Загрузить CSV');
@@ -60,7 +63,7 @@ describe('ImportControl', () => {
     input.addEventListener('click', onClick);
 
     action.focus();
-    await user.keyboard('{Enter}');
+    await user.keyboard(key);
 
     expect(action).toHaveFocus();
     expect(onClick).toHaveBeenCalledOnce();
@@ -115,6 +118,17 @@ describe('ImportControl', () => {
     fireEvent.drop(document, textDrag);
 
     expect(screen.queryByText('Отпустите CSV-файл')).not.toBeInTheDocument();
+    expect(onFile).not.toHaveBeenCalled();
+  });
+
+  it('removes document drag-and-drop listeners when unmounted', () => {
+    const file = new File(['csv'], 'members.csv', { type: 'text/csv' });
+    const { onFile, unmount } = renderControl();
+
+    unmount();
+    fireEvent.dragEnter(document, fileDrag(file));
+    fireEvent.drop(document, fileDrag(file));
+
     expect(onFile).not.toHaveBeenCalled();
   });
 

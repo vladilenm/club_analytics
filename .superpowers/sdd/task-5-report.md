@@ -111,3 +111,97 @@ RED result: **FAIL**, 1 of 8 tests failed because the visible action could not r
 - The data-ready section is intentionally a minimal semantic placeholder. Task 6 will supply the full dashboard presentation.
 - `styles.css` is intentionally not imported; visual treatment and the final hidden-input styling belong to Task 7.
 - No blockers remain for Task 5.
+
+## Fix Review
+
+### Findings addressed
+
+1. A successful import now replaces the cached boot promise for its repository. Switching A → B → A restores the imported A snapshot while `A.load()` remains deduplicated.
+2. Import completions now require all three conditions before changing the boot cache or React state: the component is mounted, the repository is still current, and the operation generation is still current. Repository changes, newer imports, and unmount cleanup all advance the generation.
+3. Regression coverage now proves that prior metadata/dashboard remain visible and the picker remains disabled while a replacement import is pending.
+4. Keyboard coverage now exercises Space as well as Enter.
+5. Document-wide drag/drop cleanup is covered behaviorally by dropping after `ImportControl` unmount and asserting that `onFile` is untouched.
+
+### RED evidence
+
+#### Repository round-trip
+
+Command:
+
+```bash
+npm test -- src/App.test.tsx
+```
+
+Exact result: exit 1; `src/App.test.tsx (9 tests | 1 failed)`. Failure:
+
+```text
+FAIL  src/App.test.tsx > App > keeps an imported snapshot when returning to its repository
+TestingLibraryElementError: Unable to find an element with the text: round-trip-2026-08-03.csv.
+Tests  1 failed | 8 passed (9)
+```
+
+Root cause: the per-repository `WeakMap` still held the original resolved `null` boot promise after the import succeeded.
+
+After updating the boot cache on successful import, the same command passed 1 file / 9 tests.
+
+#### Stale A → B → A completion
+
+Command:
+
+```bash
+npm test -- src/App.test.tsx
+```
+
+Exact result: exit 1; `src/App.test.tsx (12 tests | 1 failed)`. Failure:
+
+```text
+FAIL  src/App.test.tsx > App > does not let an older A import overwrite a newer one after A to B to A
+Error: expect(element).not.toBeInTheDocument()
+expected document not to contain element, found <span>
+  stale-2026-08-03.csv
+</span> instead
+Tests  1 failed | 11 passed (12)
+```
+
+Root cause: the async continuation only compared repository identity. Once props returned to A, an older A import again passed that identity check and replaced the newer A state/cache.
+
+### GREEN evidence
+
+Focused command after mounted/repository/generation guards and all requested regressions:
+
+```bash
+npm test -- src/App.test.tsx src/components/ImportControl.test.tsx
+```
+
+Result: **PASS**, 2 files / 22 tests.
+
+Required covering commands:
+
+| Command | Result |
+| --- | --- |
+| `npm test -- src/App.test.tsx src/components/ImportControl.test.tsx` | PASS — 2 files, 22 tests |
+| `npm test` | PASS — 7 files, 58 tests |
+| `npm run typecheck` | PASS — exit 0 |
+| `npm run lint` | PASS — exit 0 |
+| `npm run build` | PASS — 23 modules transformed; production assets emitted |
+
+### Files changed in review fix
+
+- `src/App.tsx` — refreshes per-repository boot results after current imports and guards async completions with mounted, current-repository, and operation-generation refs.
+- `src/App.test.tsx` — adds repository round-trip, stale A → B → A/newer operation, unmount settlement, and pending replacement regressions.
+- `src/components/ImportControl.test.tsx` — adds Space activation and post-unmount document drop coverage.
+- `.superpowers/sdd/task-5-report.md` — records review findings and exact RED/GREEN evidence.
+
+### Review-fix self-review
+
+- Both success and failure continuations use the same three-part guard; stale failures cannot surface an obsolete error either.
+- Cache replacement occurs only after persistence succeeds and only for the current operation, so failed or stale operations do not replace a known boot result.
+- Repository changes advance the generation in a layout effect, closing the render-to-passive-effect window before promise continuations can run.
+- Unmount cleanup marks the component unmounted and advances the generation before any later import continuation can mutate cache/state.
+- Existing StrictMode load deduplication remains intact because the boot-promise `WeakMap` is unchanged and covered by the original test.
+- The pending-import regression verifies the non-destructive UI contract at the intermediate state, not only after rejection.
+- No production changes were needed in `ImportControl`; its Space handling and listener cleanup were already implemented and are now explicitly covered.
+
+### Remaining concern
+
+- An IndexedDB write already awaited inside `importCsvFile` cannot be cancelled after it has started. The new guards prevent a stale continuation from changing the active React state or boot cache; normal same-view overlap remains prevented by the disabled picker.

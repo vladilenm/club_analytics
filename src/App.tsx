@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ImportControl } from './components/ImportControl';
 import { buildDashboardModel } from './domain/analytics';
 import { ImportError } from './domain/importError';
@@ -38,6 +38,9 @@ export function App({ repository: repositoryProp }: AppProps) {
     error: null,
   }));
   const loadRequestsRef = useRef(new WeakMap<SnapshotRepository, Promise<DashboardSnapshot | null>>());
+  const mountedRef = useRef(false);
+  const currentRepositoryRef = useRef(repository);
+  const operationGenerationRef = useRef(0);
   const isCurrentRepository = state.repository === repository;
   const phase = isCurrentRepository ? state.phase : 'loading';
   const snapshot = isCurrentRepository ? state.snapshot : null;
@@ -46,6 +49,19 @@ export function App({ repository: repositoryProp }: AppProps) {
     () => snapshot ? buildDashboardModel(snapshot.members) : null,
     [snapshot],
   );
+
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      operationGenerationRef.current += 1;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    currentRepositoryRef.current = repository;
+    operationGenerationRef.current += 1;
+  }, [repository]);
 
   useEffect(() => {
     let request = loadRequestsRef.current.get(repository);
@@ -83,21 +99,34 @@ export function App({ repository: repositoryProp }: AppProps) {
   }, [repository]);
 
   const handleFile = useCallback(async (file: File): Promise<void> => {
+    const operationGeneration = operationGenerationRef.current + 1;
+    operationGenerationRef.current = operationGeneration;
     setState((current) => current.repository === repository
       ? { ...current, phase: 'importing', error: null }
       : current);
 
     try {
       const importedSnapshot = await importCsvFile(file, repository);
-      setState((current) => current.repository === repository
-        ? {
-            repository,
-            phase: 'ready-data',
-            snapshot: importedSnapshot,
-            error: null,
-          }
-        : current);
+      if (
+        !mountedRef.current
+        || currentRepositoryRef.current !== repository
+        || operationGenerationRef.current !== operationGeneration
+      ) return;
+
+      loadRequestsRef.current.set(repository, Promise.resolve(importedSnapshot));
+      setState({
+        repository,
+        phase: 'ready-data',
+        snapshot: importedSnapshot,
+        error: null,
+      });
     } catch (importError) {
+      if (
+        !mountedRef.current
+        || currentRepositoryRef.current !== repository
+        || operationGenerationRef.current !== operationGeneration
+      ) return;
+
       setState((current) => current.repository === repository
         ? {
             ...current,
