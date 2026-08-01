@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ImportControl } from './components/ImportControl';
+import { Dashboard } from './components/Dashboard';
 import { buildDashboardModel } from './domain/analytics';
 import { ImportError } from './domain/importError';
 import { importCsvFile } from './import/importCsvFile';
@@ -159,10 +160,7 @@ export function App({ repository: repositoryProp }: AppProps) {
         </section>
       ) : null}
       {dashboard ? (
-        <section aria-labelledby="dashboard-heading">
-          <h2 id="dashboard-heading">Дашборд участников</h2>
-          <p>Всего участников: {dashboard.stats.total}</p>
-        </section>
+        <Dashboard members={snapshot?.members ?? []} model={dashboard} />
       ) : null}
     </main>
   );
