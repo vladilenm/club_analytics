@@ -14,13 +14,17 @@
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
+    "test:e2e": "npm run build && playwright test",
+    "test:privacy": "node --test scripts/check-dist-privacy.test.mjs",
     "privacy:check": "node scripts/check-dist-privacy.mjs",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run privacy:check"
+    "check": "npm run typecheck && npm run lint && npm run test && npm run test:privacy && npm run build && npm run privacy:check"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "dependencies": {
     "idb-keyval": "^6.3.0",
     "papaparse": "^5.5.4",

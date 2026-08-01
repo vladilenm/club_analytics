@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useRef, useState } from 'react';
 import type { MemberRecord } from '../domain/member';
 import {
   queryMembers,
@@ -35,6 +35,12 @@ const sortOptions: Array<{ value: `${SortKey}-${SortDirection}`; label: string }
   { value: 'name-asc', label: 'Имя А→Я' },
 ];
 
+const statusTabs: ReadonlyArray<{ status: StatusFilter; label: string }> = [
+  { status: 'all', label: 'Все' },
+  { status: 'active', label: 'Активные' },
+  { status: 'churned', label: 'Отменившие' },
+];
+
 function sortLabel(key: SortKey, direction: SortDirection): string {
   switch (key) {
     case 'endsAt':
@@ -47,6 +53,12 @@ function sortLabel(key: SortKey, direction: SortDirection): string {
       return direction === 'desc' ? 'Больше платежей' : 'Меньше платежей';
     case 'name':
       return direction === 'asc' ? 'Имя А→Я' : 'Имя Я→А';
+    case 'telegram':
+      return `Telegram ${direction === 'asc' ? 'А→Я' : 'Я→А'}`;
+    case 'phone':
+      return `Телефон ${direction === 'asc' ? '↑' : '↓'}`;
+    case 'status':
+      return `Статус ${direction === 'asc' ? 'А→Я' : 'Я→А'}`;
   }
 }
 
@@ -75,6 +87,11 @@ export function MembersTable({ members }: MembersTableProps) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [status, setStatus] = useState<StatusFilter>('all');
+  const statusTabRefs = useRef<Record<StatusFilter, HTMLButtonElement | null>>({
+    all: null,
+    active: null,
+    churned: null,
+  });
   const [sortKey, setSortKey] = useState<SortKey>('endsAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const selectedSortValue: `${SortKey}-${SortDirection}` = `${sortKey}-${sortDirection}`;
@@ -88,6 +105,33 @@ export function MembersTable({ members }: MembersTableProps) {
 
   function selectStatus(nextStatus: StatusFilter): void {
     setStatus(nextStatus);
+  }
+
+  function handleStatusKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, currentStatus: StatusFilter): void {
+    const currentIndex = statusTabs.findIndex((tab) => tab.status === currentStatus);
+    let nextIndex: number;
+
+    switch (event.key) {
+      case 'ArrowRight':
+        nextIndex = (currentIndex + 1) % statusTabs.length;
+        break;
+      case 'ArrowLeft':
+        nextIndex = (currentIndex - 1 + statusTabs.length) % statusTabs.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = statusTabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    const nextStatus = statusTabs[nextIndex].status;
+    selectStatus(nextStatus);
+    statusTabRefs.current[nextStatus]?.focus();
   }
 
   function changeSort(event: React.ChangeEvent<HTMLSelectElement>): void {
@@ -120,9 +164,22 @@ export function MembersTable({ members }: MembersTableProps) {
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
         <div className="tabs" role="tablist" aria-label="Фильтр по статусу">
-          <button type="button" role="tab" aria-selected={status === 'all'} onClick={() => selectStatus('all')}>Все</button>
-          <button type="button" role="tab" aria-selected={status === 'active'} onClick={() => selectStatus('active')}>Активные</button>
-          <button type="button" role="tab" aria-selected={status === 'churned'} onClick={() => selectStatus('churned')}>Отменившие</button>
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.status}
+              ref={(element) => { statusTabRefs.current[tab.status] = element; }}
+              id={`status-tab-${tab.status}`}
+              type="button"
+              role="tab"
+              aria-controls="members-panel"
+              aria-selected={status === tab.status}
+              tabIndex={status === tab.status ? 0 : -1}
+              onClick={() => selectStatus(tab.status)}
+              onKeyDown={(event) => handleStatusKeyDown(event, tab.status)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
         <select
           aria-label="Сортировка"
@@ -138,7 +195,13 @@ export function MembersTable({ members }: MembersTableProps) {
         </select>
       </div>
 
-      <section className="tblwrap" aria-labelledby="members-heading">
+      <section
+        className="tblwrap"
+        id="members-panel"
+        role="tabpanel"
+        aria-labelledby={`status-tab-${status}`}
+        tabIndex={0}
+      >
         <div className="thead">
           <h3 id="members-heading">Участники</h3>
           <span className="cnt" aria-live="polite">{recordCountLabel(visibleMembers.length)}</span>
@@ -148,13 +211,13 @@ export function MembersTable({ members }: MembersTableProps) {
             <thead>
               <tr>
                 <SortableHeader activeDirection={activeDirection('name')} buttonLabel="Сортировать по имени" onClick={() => sortBy('name')}>Имя</SortableHeader>
-                <th>Telegram</th>
-                <th>Телефон</th>
+                <SortableHeader activeDirection={activeDirection('telegram')} buttonLabel="Сортировать по Telegram" onClick={() => sortBy('telegram')}>Telegram</SortableHeader>
+                <SortableHeader activeDirection={activeDirection('phone')} buttonLabel="Сортировать по телефону" onClick={() => sortBy('phone')}>Телефон</SortableHeader>
                 <SortableHeader activeDirection={activeDirection('startedAt')} buttonLabel="Сортировать по дате старта" onClick={() => sortBy('startedAt')}>Оформлена</SortableHeader>
                 <SortableHeader activeDirection={activeDirection('endsAt')} buttonLabel="Сортировать по дате окончания" onClick={() => sortBy('endsAt')}>Окончание / отмена</SortableHeader>
                 <SortableHeader activeDirection={activeDirection('lifetimeDays')} buttonLabel="Сортировать по дням в клубе" onClick={() => sortBy('lifetimeDays')}>Дней</SortableHeader>
                 <SortableHeader activeDirection={activeDirection('paymentCount')} buttonLabel="Сортировать по платежам" onClick={() => sortBy('paymentCount')}>Платежей</SortableHeader>
-                <th>Статус</th>
+                <SortableHeader activeDirection={activeDirection('status')} buttonLabel="Сортировать по статусу" onClick={() => sortBy('status')}>Статус</SortableHeader>
               </tr>
             </thead>
             <tbody>

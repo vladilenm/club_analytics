@@ -29,6 +29,65 @@ describe('parseMembersCsv', () => {
     ]);
   });
 
+  it('accepts a UTF-8 BOM before the required headers', () => {
+    const csv = `\uFEFF${makeCsv([makeRawMember({ USER_ID: 'bom-member' })])}`;
+
+    expect(parseMembersCsv(csv)).toEqual([
+      expect.objectContaining({ id: 'bom-member' }),
+    ]);
+  });
+
+  it('ignores additional columns from a compatible export', () => {
+    const [headers, row] = makeCsv([makeRawMember({ USER_ID: 'extra-member' })]).split('\r\n');
+    const csv = `${headers},future_field\r\n${row},future value`;
+
+    expect(parseMembersCsv(csv)).toEqual([
+      expect.objectContaining({ id: 'extra-member' }),
+    ]);
+  });
+
+  it('parses multiline quoted cells without changing member text', () => {
+    const name = 'Synthetic, member\nsecond line';
+
+    expect(parseMembersCsv(makeCsv([makeRawMember({ USER_ID: 'multiline', name })]))).toEqual([
+      expect.objectContaining({ id: 'multiline', name }),
+    ]);
+  });
+
+  it('normalizes timezone offsets before calculating lifetime', () => {
+    const csv = makeCsv([makeRawMember({
+      USER_ID: 'offset-member',
+      pay_1st: '2026-01-01T03:00:00+03:00',
+      end_date: '2026-01-02T05:30:00+03:00',
+    })]);
+
+    expect(parseMembersCsv(csv)).toEqual([
+      expect.objectContaining({
+        id: 'offset-member',
+        startedAt: '2026-01-01T00:00:00.000Z',
+        endsAt: '2026-01-02T02:30:00.000Z',
+        lifetimeDays: 1,
+      }),
+    ]);
+  });
+
+  it('preserves supported fractional seconds in normalized timestamps', () => {
+    const csv = makeCsv([makeRawMember({
+      USER_ID: 'fraction-member',
+      pay_1st: '2026-01-01T00:00:00.250Z',
+      end_date: '2026-01-02T00:00:00.500Z',
+    })]);
+
+    expect(parseMembersCsv(csv)).toEqual([
+      expect.objectContaining({
+        id: 'fraction-member',
+        startedAt: '2026-01-01T00:00:00.250Z',
+        endsAt: '2026-01-02T00:00:00.500Z',
+        lifetimeDays: 1,
+      }),
+    ]);
+  });
+
   it('ignores truncated unpaid rows whose payment fields are all empty', () => {
     const csv = `${makeCsv([makeRawMember({ USER_ID: 'paid' })])}\r\nunpaid,,,,,,,,`;
 

@@ -4,7 +4,7 @@
 
 ## Требования
 
-- Node.js 20 или новее.
+- Node.js 20.19+ или 22.12+.
 - npm 10 или новее.
 - Для браузерных тестов — Chromium, устанавливаемый командой `npx playwright install chromium`.
 

@@ -76,6 +76,9 @@ describe('queryMembers', () => {
     ['lifetimeDays', 'desc', ['alena', 'pavel', 'anna', 'boris']],
     ['paymentCount', 'desc', ['alena', 'pavel', 'boris', 'anna']],
     ['name', 'asc', ['alena', 'anna', 'boris', 'pavel']],
+    ['telegram', 'asc', ['anna', 'boris', 'alena', 'pavel']],
+    ['phone', 'asc', ['pavel', 'anna', 'boris', 'alena']],
+    ['status', 'asc', ['pavel', 'anna', 'boris', 'alena']],
   ] as const)('sorts by %s %s', (sortKey, sortDirection, expected) => {
     expect(ids(queryMembers(members, { ...query, sortKey, sortDirection }))).toEqual(expected);
   });

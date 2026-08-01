@@ -109,6 +109,64 @@ describe('MembersTable', () => {
     expect(visibleNames()).toEqual(['Павел', 'Борис', 'Анна']);
   });
 
+  it.each([
+    ['Telegram', 'Сортировать по Telegram', 'telegram-desc', ['Павел', 'Борис', 'Анна'], ['Анна', 'Борис', 'Павел']],
+    ['phone', 'Сортировать по телефону', 'phone-desc', ['Борис', 'Анна', 'Павел'], ['Павел', 'Анна', 'Борис']],
+    ['status', 'Сортировать по статусу', 'status-desc', ['Борис', 'Павел', 'Анна'], ['Павел', 'Анна', 'Борис']],
+  ])('sorts from the legacy %s header and keeps the dropdown truthful', async (_column, buttonName, sortValue, expectedDesc, expectedAsc) => {
+    const user = userEvent.setup();
+    render(<MembersTable members={members} />);
+
+    const sort = screen.getByRole('combobox', { name: 'Сортировка' });
+    const header = screen.getByRole('button', { name: buttonName });
+    await user.click(header);
+
+    expect(visibleNames()).toEqual(expectedDesc);
+    expect(header.closest('th')).toHaveAttribute('aria-sort', 'descending');
+    expect(sort).toHaveValue(sortValue);
+    expect(within(sort).getByRole('option', { selected: true })).toBeDisabled();
+
+    await user.click(header);
+    expect(visibleNames()).toEqual(expectedAsc);
+    expect(header.closest('th')).toHaveAttribute('aria-sort', 'ascending');
+  });
+
+  it('implements roving keyboard tabs tied to a named tabpanel', async () => {
+    const user = userEvent.setup();
+    render(<MembersTable members={members} />);
+
+    const all = screen.getByRole('tab', { name: 'Все' });
+    const active = screen.getByRole('tab', { name: 'Активные' });
+    const churned = screen.getByRole('tab', { name: 'Отменившие' });
+
+    expect(all).toHaveAttribute('tabindex', '0');
+    expect(active).toHaveAttribute('tabindex', '-1');
+    expect(churned).toHaveAttribute('tabindex', '-1');
+    for (const tab of [all, active, churned]) {
+      expect(tab).toHaveAttribute('aria-controls', 'members-panel');
+    }
+    expect(screen.getByRole('tabpanel', { name: 'Все' })).toHaveAttribute('aria-labelledby', 'status-tab-all');
+
+    all.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(active).toHaveFocus();
+    expect(active).toHaveAttribute('aria-selected', 'true');
+    expect(active).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('tabpanel', { name: 'Активные' })).toHaveAttribute('aria-labelledby', 'status-tab-active');
+    expect(visibleNames()).toEqual(['Павел', 'Анна']);
+
+    await user.keyboard('{End}');
+    expect(churned).toHaveFocus();
+    expect(churned).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{ArrowRight}');
+    expect(all).toHaveFocus();
+    await user.keyboard('{ArrowLeft}');
+    expect(churned).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(all).toHaveFocus();
+    expect(all).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('formats dates in UTC and exposes accessible status tabs', () => {
     render(<MembersTable members={members} />);
 

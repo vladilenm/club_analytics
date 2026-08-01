@@ -1,7 +1,7 @@
 import type { MemberRecord } from './member';
 
 export type StatusFilter = 'all' | 'active' | 'churned';
-export type SortKey = 'endsAt' | 'startedAt' | 'lifetimeDays' | 'paymentCount' | 'name';
+export type SortKey = 'endsAt' | 'startedAt' | 'lifetimeDays' | 'paymentCount' | 'name' | 'telegram' | 'phone' | 'status';
 export type SortDirection = 'asc' | 'desc';
 
 export interface MemberQuery {
@@ -23,6 +23,12 @@ function compareMembers(left: MemberRecord, right: MemberRecord, key: SortKey): 
       return left.paymentCount - right.paymentCount;
     case 'name':
       return left.name.localeCompare(right.name, 'ru', { sensitivity: 'base' });
+    case 'telegram':
+      return left.telegram.localeCompare(right.telegram, 'ru', { sensitivity: 'base' });
+    case 'phone':
+      return left.phone.localeCompare(right.phone, 'ru', { sensitivity: 'base' });
+    case 'status':
+      return left.status.localeCompare(right.status, 'ru', { sensitivity: 'base' });
   }
 }
 
