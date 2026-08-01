@@ -79,7 +79,19 @@ export function parseMembersCsv(csvText: string): MemberRecord[] {
     transformHeader: (value) => value.trim(),
   });
 
-  if (parsed.errors.length > 0) {
+  const blockingParseErrors = parsed.errors.filter((error) => {
+    if (error.type !== 'FieldMismatch' || error.code !== 'TooFewFields' || typeof error.row !== 'number') {
+      return true;
+    }
+
+    const row = parsed.data[error.row];
+    if (!row) return true;
+
+    return [read(row, 'pay_count'), read(row, 'pay_1st'), read(row, 'end_date')]
+      .some((value) => value !== '');
+  });
+
+  if (blockingParseErrors.length > 0) {
     throw new ImportError('CSV_PARSE_ERROR');
   }
 

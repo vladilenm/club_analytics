@@ -29,6 +29,14 @@ describe('parseMembersCsv', () => {
     ]);
   });
 
+  it('ignores truncated unpaid rows whose payment fields are all empty', () => {
+    const csv = `${makeCsv([makeRawMember({ USER_ID: 'paid' })])}\r\nunpaid,,,,,,,,`;
+
+    expect(parseMembersCsv(csv)).toEqual([
+      expect.objectContaining({ id: 'paid', paymentCount: 1 }),
+    ]);
+  });
+
   it.each([
     ['INVALID_STATUS', { active: 'yes' }],
     ['INVALID_PAYMENT_COUNT', { pay_count: 'x' }],

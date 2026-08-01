@@ -1,0 +1,3 @@
+USER_ID,registration,username,name,ref_link,phone,email,comment,active,plan,end_date,use_trial,recurrent,tags,pay_count,pay_last,pay_1st
+fictional-active,2026-01-01 00:00:00,example_active,Fictional Active,,+70000000001,,,1,1 месяц 💬,2026-02-01 00:00:00,,+,,1,2026-01-01 00:00:00,2026-01-01 00:00:00
+fictional-churned,2026-01-01 00:00:00,example_churned,Fictional Churned,,+70000000002,,,0,Старт,2026-01-15 00:00:00,,,,1,2026-01-01 00:00:00,2026-01-01 00:00:00

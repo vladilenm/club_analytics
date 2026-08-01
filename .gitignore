@@ -2,7 +2,12 @@
 .superpowers/
 node_modules/
 dist/
+playwright-report/
+test-results/
+coverage/
 __pycache__/
 *.pyc
 *.tsbuildinfo
+*.csv
+!e2e/fixtures/members.csv
 club_dashboard_updated.html
