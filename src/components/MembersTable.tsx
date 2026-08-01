@@ -35,6 +35,21 @@ const sortOptions: Array<{ value: `${SortKey}-${SortDirection}`; label: string }
   { value: 'name-asc', label: 'Имя А→Я' },
 ];
 
+function sortLabel(key: SortKey, direction: SortDirection): string {
+  switch (key) {
+    case 'endsAt':
+      return `Дата окончания ${direction === 'asc' ? '↑' : '↓'}`;
+    case 'startedAt':
+      return `Дата старта ${direction === 'asc' ? '↑' : '↓'}`;
+    case 'lifetimeDays':
+      return direction === 'desc' ? 'Дольше всех в клубе' : 'Меньше дней в клубе';
+    case 'paymentCount':
+      return direction === 'desc' ? 'Больше платежей' : 'Меньше платежей';
+    case 'name':
+      return direction === 'asc' ? 'Имя А→Я' : 'Имя Я→А';
+  }
+}
+
 function SortableHeader({ activeDirection, buttonLabel, children, onClick }: SortableHeaderProps) {
   return (
     <th aria-sort={activeDirection ? (activeDirection === 'asc' ? 'ascending' : 'descending') : 'none'}>
@@ -62,6 +77,8 @@ export function MembersTable({ members }: MembersTableProps) {
   const [status, setStatus] = useState<StatusFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('endsAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const selectedSortValue: `${SortKey}-${SortDirection}` = `${sortKey}-${sortDirection}`;
+  const isLegacySortOption = sortOptions.some((option) => option.value === selectedSortValue);
   const visibleMembers = useMemo(() => queryMembers(members, {
     search: deferredSearch,
     status,
@@ -109,9 +126,12 @@ export function MembersTable({ members }: MembersTableProps) {
         </div>
         <select
           aria-label="Сортировка"
-          value={`${sortKey}-${sortDirection}`}
+          value={selectedSortValue}
           onChange={changeSort}
         >
+          {isLegacySortOption ? null : (
+            <option value={selectedSortValue} disabled>{sortLabel(sortKey, sortDirection)}</option>
+          )}
           {sortOptions.map((option) => (
             <option value={option.value} key={option.value}>{option.label}</option>
           ))}

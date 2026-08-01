@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { buildDashboardModel } from '../domain/analytics';
 import type { MemberRecord } from '../domain/member';
 import { Dashboard } from './Dashboard';
+import { PlanDistribution } from './PlanDistribution';
 
 afterEach(cleanup);
 
@@ -97,5 +98,13 @@ describe('Dashboard', () => {
     expect(screen.getByText('Январь 2026: 2 новых, 0 отмен')).toBeInTheDocument();
     expect(screen.getByText('Февраль 2026: 2 новых, 1 отмена')).toBeInTheDocument();
     expect(screen.getByText('Март 2026: 0 новых, 1 отмена')).toBeInTheDocument();
+  });
+
+  it('renders a safe empty state when there are no active plans', () => {
+    const { container } = render(<PlanDistribution plans={[]} />);
+
+    expect(screen.getByText('Нет активных тарифов.')).toBeInTheDocument();
+    expect(container.querySelector('.pfill')).toBeNull();
+    expect(container.innerHTML).not.toMatch(/Infinity|NaN/);
   });
 });

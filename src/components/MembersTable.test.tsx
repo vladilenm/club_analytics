@@ -93,6 +93,22 @@ describe('MembersTable', () => {
     expect(nameButton.closest('th')).toHaveAttribute('aria-sort', 'ascending');
   });
 
+  it('keeps the sort dropdown truthful after header sorting and accepts the next dropdown sort', async () => {
+    const user = userEvent.setup();
+    render(<MembersTable members={members} />);
+
+    const sort = screen.getByRole('combobox', { name: 'Сортировка' });
+    await user.click(screen.getByRole('button', { name: 'Сортировать по имени' }));
+
+    expect(sort).toHaveValue('name-desc');
+    expect(within(sort).getByRole('option', { name: 'Имя Я→А' })).toBeDisabled();
+    expect(visibleNames()).toEqual(['Павел', 'Борис', 'Анна']);
+
+    await user.selectOptions(sort, 'paymentCount-desc');
+    expect(sort).toHaveValue('paymentCount-desc');
+    expect(visibleNames()).toEqual(['Павел', 'Борис', 'Анна']);
+  });
+
   it('formats dates in UTC and exposes accessible status tabs', () => {
     render(<MembersTable members={members} />);
 
