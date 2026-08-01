@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test('imports a CSV, updates the dashboard, and restores it after reload', async ({ page }) => {
   const externalRequests: string[] = [];
   page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1:4173')) externalRequests.push(request.url());
+    if (new URL(request.url()).origin !== 'http://127.0.0.1:4173') externalRequests.push(request.url());
   });
 
   await page.goto('/');

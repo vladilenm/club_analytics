@@ -37,6 +37,12 @@ describe('parseMembersCsv', () => {
     ]);
   });
 
+  it('rejects a truncated row when any payment field is populated', () => {
+    const csv = `${makeCsv([makeRawMember({ USER_ID: 'paid' })])}\r\nincomplete,,,,,,,,,,,,,,1`;
+
+    expectImportCode(() => parseMembersCsv(csv), 'CSV_PARSE_ERROR');
+  });
+
   it.each([
     ['INVALID_STATUS', { active: 'yes' }],
     ['INVALID_PAYMENT_COUNT', { pay_count: 'x' }],
