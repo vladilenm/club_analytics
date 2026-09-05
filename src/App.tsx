@@ -141,7 +141,13 @@ export function App({ repository: repositoryProp }: AppProps) {
   return (
     <main className="wrap">
       <header className="app-header">
-        <h1>Клуб Незаменимых</h1>
+        <h1>
+          <svg className="club-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+            <path d="M16 2.75 19.2 12.8 29.25 16l-10.05 3.2L16 29.25l-3.2-10.05L2.75 16l10.05-3.2L16 2.75Z" />
+            <circle cx="16" cy="16" r="3.25" />
+          </svg>
+          <span>Клуб Незаменимых</span>
+        </h1>
         {phase === 'loading' ? null : (
           <ImportControl
             metadata={snapshot?.metadata ?? null}
