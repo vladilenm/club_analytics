@@ -47,10 +47,29 @@ button {
 }
 
 h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 4px;
   font-size: 28px;
   font-weight: 650;
   letter-spacing: -.02em;
+}
+
+.club-mark {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  color: var(--green);
+  filter: drop-shadow(0 0 10px rgba(62, 207, 142, .18));
+}
+
+.club-mark path {
+  fill: currentColor;
+}
+
+.club-mark circle {
+  fill: var(--page);
 }
 
 .app-header { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; margin-bottom:28px; }
