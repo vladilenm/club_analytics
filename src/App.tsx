@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ImportControl } from './components/ImportControl';
 import { Dashboard } from './components/Dashboard';
+import { PeriodAnalytics } from './period/PeriodAnalytics';
 import { buildDashboardModel } from './domain/analytics';
 import { ImportError } from './domain/importError';
 import { importCsvFile } from './import/importCsvFile';
@@ -159,6 +160,7 @@ export function App({ repository: repositoryProp }: AppProps) {
       </header>
 
       {phase === 'loading' ? <p className="loading-state" role="status">Загрузка локальных данных…</p> : null}
+      {phase !== 'loading' ? <PeriodAnalytics /> : null}
       {phase === 'ready-empty' ? (
         <section className="empty-state">
           <div>

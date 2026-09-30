@@ -47,7 +47,7 @@ function isCalendarDate(value: unknown): value is string {
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
-function isImportMetadata(value: unknown): value is ImportMetadata {
+export function isImportMetadata(value: unknown): value is ImportMetadata {
   return isRecord(value)
     && typeof value.fileName === 'string'
     && value.fileName.trim() !== ''

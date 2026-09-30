@@ -33,11 +33,7 @@ export function resolveExportDate(fileName: string, fallbackDate: Date): string 
   return formatLocalDate(fallbackDate);
 }
 
-export async function importCsvFile(
-  file: File,
-  repository: SnapshotRepository,
-  now: () => Date = () => new Date(),
-): Promise<DashboardSnapshot> {
+export async function readCsvFile(file: File): Promise<string> {
   if (!csvSuffix.test(file.name)) {
     throw new ImportError('NOT_CSV');
   }
@@ -49,13 +45,19 @@ export async function importCsvFile(
     throw new ImportError('UNREADABLE_FILE');
   }
 
-  let csvText: string;
   try {
-    csvText = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch {
     throw new ImportError('INVALID_ENCODING');
   }
+}
 
+export async function importCsvFile(
+  file: File,
+  repository: SnapshotRepository,
+  now: () => Date = () => new Date(),
+): Promise<DashboardSnapshot> {
+  const csvText = await readCsvFile(file);
   const importedAt = now();
   const snapshot: DashboardSnapshot = {
     schemaVersion: 1,
