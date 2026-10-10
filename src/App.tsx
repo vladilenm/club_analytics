@@ -160,7 +160,7 @@ export function App({ repository: repositoryProp }: AppProps) {
       </header>
 
       {phase === 'loading' ? <p className="loading-state" role="status">Загрузка локальных данных…</p> : null}
-      {phase !== 'loading' ? <PeriodAnalytics /> : null}
+      {phase !== 'loading' ? <PeriodAnalytics memberSnapshot={snapshot} /> : null}
       {phase === 'ready-empty' ? (
         <section className="empty-state">
           <div>

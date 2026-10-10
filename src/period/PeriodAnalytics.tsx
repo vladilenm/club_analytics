@@ -1,9 +1,15 @@
 import { useRef } from 'react';
+import type { DashboardSnapshot } from '../storage/snapshotRepository';
 import { HistoryReport } from './HistoryReport';
 import { historyRepository, type HistoryRepository } from './repository';
 import { useHistory } from './useHistory';
 
-export function PeriodAnalytics({ repository = historyRepository }: { repository?: HistoryRepository }) {
+interface Props {
+  repository?: HistoryRepository;
+  memberSnapshot?: DashboardSnapshot | null;
+}
+
+export function PeriodAnalytics({ repository = historyRepository, memberSnapshot = null }: Props) {
   const { snapshot, busy, error, upload, saveRules } = useHistory(repository);
   const input = useRef<HTMLInputElement>(null);
 
@@ -23,7 +29,7 @@ export function PeriodAnalytics({ repository = historyRepository }: { repository
       </div>
       {error ? <p className="period-error" role="alert">{error}</p> : null}
       {busy ? <p className="period-loading">Загрузка истории…</p> : null}
-      {snapshot ? <HistoryReport key={snapshot.metadata.importedAt} snapshot={snapshot} busy={busy} onSaveRules={saveRules} /> : (
+      {snapshot ? <HistoryReport key={snapshot.metadata.importedAt} snapshot={snapshot} memberSnapshot={memberSnapshot} busy={busy} onSaveRules={saveRules} /> : (
         <p className="period-empty">Загрузите полную выгрузку транзакций за всё время, чтобы увидеть состав клуба, новых, ушедших и вернувшихся за выбранные даты. История хранится только в этом браузере.</p>
       )}
     </section>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDuration, buildTimeline, calculatePeriod } from './analytics';
+import { addDuration, buildTimeline, calculatePeriod, calculatePeriodReport } from './analytics';
 import { createRules, type Transaction } from './model';
 import { parseTransactionsCsv } from './parseTransactionsCsv';
 
@@ -92,6 +92,31 @@ describe('period metrics', () => {
   it('handles a period before the first transaction', () => {
     expect(calculatePeriod(periods, '2026-01-01', '2026-01-31', '2026-09-30'))
       .toEqual({ opening: 0, closing: 0, joined: 0, left: 0, returned: 0 });
+  });
+  it('lists all nine historical departures regardless of later returns or current snapshot status', () => {
+    const history = Array.from({ length: 9 }, (_, index) => tx(`person-${index}`, '2026-09-03'));
+    history.push(...Array.from({ length: 6 }, (_, index) => tx(`person-${index}`, '2026-10-05')));
+    const report = calculatePeriodReport(buildTimeline(history, createRules(history)), '2026-10-01', '2026-10-07', '2026-10-10');
+    expect(report.metrics).toEqual({ opening: 9, closing: 6, joined: 0, left: 9, returned: 6 });
+    expect(report.events.left).toHaveLength(9);
+    expect(report.events.left.filter((person) => person.activeAtEnd)).toHaveLength(6);
+    expect(report.events.left.map((person) => person.userId)).toEqual(history.slice(0, 9).map((payment) => payment.userId));
+    expect(report.events.returned).toHaveLength(6);
+  });
+  it('keeps repeated events in one row and counts a return after less than 30 days', () => {
+    const history = [tx('a', '2026-09-01', 'Неделя в «Незаменимых»'), tx('a', '2026-09-10', 'Неделя в «Незаменимых»')];
+    const report = calculatePeriodReport(buildTimeline(history, createRules(history)), '2026-09-01', '2026-09-30', '2026-09-30');
+    expect(report.events.joined).toEqual([{ userId: 'a', dates: [Date.parse('2026-09-01')], activeAtEnd: false }]);
+    expect(report.events.left).toEqual([{ userId: 'a', dates: [Date.parse('2026-09-08'), Date.parse('2026-09-17')], activeAtEnd: false }]);
+    expect(report.events.returned).toEqual([{ userId: 'a', dates: [Date.parse('2026-09-10')], activeAtEnd: false }]);
+    expect(report.metrics).toEqual({ opening: 0, closing: 0, joined: 1, left: 1, returned: 1 });
+  });
+  it('uses the same UTC boundaries for event lists and metrics', () => {
+    const history = [tx('old', '2026-08-01'), tx('new', '2026-09-01'), tx('tomorrow', '2026-09-02')];
+    const report = calculatePeriodReport(buildTimeline(history, createRules(history)), '2026-09-01', '2026-09-01', '2026-09-30');
+    expect(report.events.left.map((person) => person.userId)).toEqual(['old']);
+    expect(report.events.joined.map((person) => person.userId)).toEqual(['new']);
+    expect(report.events.returned).toEqual([]);
   });
   it.each([
     ['', '2026-09-30'], ['2026-09-20', '2026-09-01'],
